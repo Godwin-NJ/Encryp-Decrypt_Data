@@ -1,4 +1,5 @@
 using EncryptorDecryptor.Impementation;
+using EncryptorDecryptor.Impementation.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IEncryptDecrypt, EncryptDecryptService>();
+builder.Services.AddSingleton<HttpContextAccessor>();
 
 var app = builder.Build();
 
@@ -23,6 +25,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseMiddleware<Encrypt_DecryptMiddleware>();
 
 app.MapControllers();
 

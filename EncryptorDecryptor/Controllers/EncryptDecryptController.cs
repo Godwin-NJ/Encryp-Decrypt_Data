@@ -15,6 +15,7 @@ namespace EncryptorDecryptor.Controllers
             _encryptDecryptService = encryptDecryptService;
         }
 
+        [ProducesResponseType(typeof(EncryptDto), StatusCodes.Status200OK)]
         [HttpPost("encrypt")]
         public IActionResult Encrypt(string payload)
         {

@@ -7,6 +7,7 @@
         public string Aes_IV { get; set; }
         public string Rsa_PublicKey { get; set; }
         public string Rsa_PrivateKey { get; set; }
+        public HashSet<string> Apis { get; set; }
 
     }
 }

@@ -10,10 +10,12 @@ namespace EncryptorDecryptor.Impementation
     {
         private readonly IConfiguration _config;
         private readonly Encrypt_DecryptConfig encrypt_decrypt_Config;
-        public EncryptDecryptService(IConfiguration config)
+        private HttpContextAccessor _httpContext;
+        public EncryptDecryptService(IConfiguration config, HttpContextAccessor httpContext)
         {
             _config = config;
             encrypt_decrypt_Config = _config.GetSection("Encryption_DecryptionSettings").Get<Encrypt_DecryptConfig>() ?? new Encrypt_DecryptConfig();
+            _httpContext = httpContext;
         }
         public dynamic Decrypt(DecryptDto dto)
         {
@@ -23,7 +25,7 @@ namespace EncryptorDecryptor.Impementation
 
             rsa.ImportFromPem(pKeyConfig);
 
-            var decryptedKey = rsa.Decrypt(Convert.FromBase64String(dto.EncryptedKey), RSAEncryptionPadding.OaepSHA256);
+            var decryptedKey = rsa.Decrypt(Convert.FromBase64String(dto.EncryptedAesKey), RSAEncryptionPadding.OaepSHA256);
             var aes_iv = encrypt_decrypt_Config.Aes_IV;
 
             //decrypt payload using decrypted key and IV
@@ -40,9 +42,24 @@ namespace EncryptorDecryptor.Impementation
 
             using StreamReader sr = new(cs);
             var decryptedPayload = sr.ReadToEnd();
-            var serializePayload = JsonSerializer.Deserialize<dynamic>(decryptedPayload) ?? string.Empty; 
-            return JsonSerializer.Deserialize<dynamic>(serializePayload) ?? string.Empty; 
-            //return decryptedPayload;
+
+            //if (_httpContext?.HttpContext?.Response.ContentType?.Contains("text/plain") == true)
+            //{
+            //    return decryptedPayload;
+            //}
+            //_httpContext.HttpContext.Response.ContentType = "application/json";
+            //var serializePayload = JsonSerializer.Serialize<dynamic>(decryptedPayload) ?? string.Empty; 
+
+
+            //var dPayload = JsonSerializer.Deserialize<dynamic>(decryptedPayload) ?? string.Empty; 
+            //return JsonSerializer.Deserialize<dynamic>(dPayload) ?? string.Empty; 
+
+            if(IsJson(decryptedPayload))
+            {
+                return JsonSerializer.Deserialize<dynamic>(decryptedPayload) ?? string.Empty;
+            }
+
+            return decryptedPayload;
         }
 
         public EncryptDto Encrypt(string payload)
@@ -91,6 +108,17 @@ namespace EncryptorDecryptor.Impementation
                 //AesIV = Convert.ToBase64String(aes.IV)
             };
 
+        }
+
+        private bool IsJson(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            value = value.Trim();
+
+            return (value.StartsWith("{") && value.EndsWith("}"))
+                || (value.StartsWith("[") && value.EndsWith("]"));
         }
 
         public string SamplePayload()
