@@ -1,4 +1,5 @@
 ﻿using EncryptorDecryptor.Impementation.Dto;
+using EncryptorDecryptor.Impementation.Model;
 
 namespace EncryptorDecryptor.Impementation
 {
@@ -7,6 +8,7 @@ namespace EncryptorDecryptor.Impementation
         EncryptDto Encrypt(string payload);
         dynamic Decrypt(DecryptDto dto);
         string SamplePayload();
-        dynamic SamplePeopleData();
+        List<PeopleDto> SamplePeopleData();
+        PeopleDto GetPeopleById(PeopleDataDto dto);
     }
 }

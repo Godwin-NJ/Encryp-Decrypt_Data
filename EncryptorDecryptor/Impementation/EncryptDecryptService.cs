@@ -126,9 +126,16 @@ namespace EncryptorDecryptor.Impementation
             return MockData.SamplePayload;
         }
 
-        public dynamic SamplePeopleData()
+        public List<PeopleDto> SamplePeopleData()
         {
             return MockData.peopleData();
+        }
+
+        public PeopleDto GetPeopleById(PeopleDataDto dto)
+        {
+            var people = MockData.peopleData().FirstOrDefault(x => x.Id == dto.Id);
+
+            return people;
         }
     }
 }

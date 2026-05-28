@@ -1,5 +1,6 @@
 ﻿using EncryptorDecryptor.Impementation;
 using EncryptorDecryptor.Impementation.Dto;
+using EncryptorDecryptor.Impementation.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -58,12 +59,32 @@ namespace EncryptorDecryptor.Controllers
             }
         }
 
+        [ProducesResponseType(typeof(List<PeopleDto>), StatusCodes.Status200OK)]
         [HttpGet("sample-people-data")]
         public IActionResult SamplePeopleData()
         {
             try
             {
                 var result = _encryptDecryptService.SamplePeopleData();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [ProducesResponseType(typeof(PeopleDto), StatusCodes.Status200OK)]
+        [HttpPost("people")]
+        public IActionResult GetPeopleById(PeopleDataDto dto)
+        {
+            try
+            {
+                var result = _encryptDecryptService.GetPeopleById(dto);
+                if (result == null)
+                {
+                    return NotFound();
+                }
                 return Ok(result);
             }
             catch (Exception ex)

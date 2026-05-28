@@ -1,4 +1,5 @@
 ﻿using EncryptorDecryptor.Impementation.Dto;
+using System.Text;
 using System.Text.Json;
 //using Microsoft.AspNetCore.Http;
 
@@ -27,8 +28,8 @@ namespace EncryptorDecryptor.Impementation.Middleware
 
              if (ED_Config.IsActive && context.Request.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) 
                 && ED_Config.Apis != null 
-                && ED_Config.Apis.Contains(context.Request.Path))
-             {
+                && ED_Config.Apis.Any(api => context.Request.Path.StartsWithSegments(api)))
+            {
                
                     var originalBodyStream = context.Response.Body;
                     using var memoryStream = new MemoryStream();
@@ -53,7 +54,7 @@ namespace EncryptorDecryptor.Impementation.Middleware
 
                     context.Response.ContentType = "application/json";
 
-                    context.Response.Body = originalBodyStream;
+                context.Response.Body = originalBodyStream;
 
                     await context.Response.WriteAsync(serializedEncryptedResponse);
 
@@ -63,12 +64,40 @@ namespace EncryptorDecryptor.Impementation.Middleware
             }
             else if (ED_Config.IsActive && context.Request.Method.Equals("POST", StringComparison.OrdinalIgnoreCase)
                   && ED_Config.Apis != null
-                  && ED_Config.Apis.Contains(context.Request.Path))                
+                  && ED_Config.Apis.Any(api => context.Request.Path.StartsWithSegments(api)))                
             {
-                // Logic to decrypt the request body and encrypt the response body for POST requests
-                await _next(context);
+                //Login to decrypt request body and return unencryoted response body
 
-                //return;
+                context.Request.EnableBuffering();
+
+                using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, leaveOpen: true);
+
+                var body = await reader.ReadToEndAsync();
+
+                context.Request.Body.Position = 0;
+
+                var encryptedPayload = JsonSerializer.Deserialize<EncryptDto>(body);
+
+                var decryptedPayload = _encryptDecryptService.Decrypt(new DecryptDto
+                {
+                    EncryptedAesKey = encryptedPayload?.EncryptedAesKey ?? string.Empty,
+                    EncryptedPayload = encryptedPayload?.EncryptedPayload ?? string.Empty
+                });
+
+                var decryptedBytes = Encoding.UTF8.GetBytes(decryptedPayload.ToString());
+
+                context.Request.Body = new MemoryStream(decryptedBytes);         
+
+
+                context.Request.ContentLength = decryptedBytes.Length;
+
+                context.Request.Body.Position = 0;
+
+                context.Request.ContentType = "application/json";
+
+                await _next(context);
+                return;
+              
             }
 
             await _next(context);
